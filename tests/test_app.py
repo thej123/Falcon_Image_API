@@ -35,4 +35,16 @@ def test_posted_image_gets_saved(client, monkeypatch):
     fake_uuid = '123e4567-e89b-12d3-a456-426655440000'
     monkeypatch.setattr('uuid.uuid4', lambda: fake_uuid)
 
+    # When the service receives an image through POST...
+    fake_image_bytes = b'fake-images-bytes'
+    response = client.simulate_post(
+        '/images',
+        body=fake_image_bytes,
+        headers={'content-type': 'image/png'}
+    )
+
+    # ...it must return a 201 code, save the file, and return the images's resource location.
+    assert response.status == falcon.HTTP_CREATED #201 code,
+    assert call().write(fake_image_bytes) in mock_file_open.mock_calls # save the file
+    assert response.headers['location'] == '/images/{}.png'.format(fake_uuid) # return the images's resource location
 

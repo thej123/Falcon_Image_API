@@ -18,7 +18,7 @@ api = application = falcon.API()
 
 # Each requested URL is mapped to a specific resource.
 
-images = Resource()
+images = Resource(storage_path='.')
 api.add_route('/images', images)
 
 # 'add_route()' expects an instance of the resource class, not the class itself. The same instance is used for all requests. This strategy improves performace and reduces memory usage, but this also means that if you host your application with a threaded web server, resources and thier dependencies must be thread-safe.
