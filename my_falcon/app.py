@@ -1,3 +1,4 @@
+import os
 import falcon
 from .images import Resource, ImageStore
 """
@@ -35,7 +36,10 @@ def create_app(image_store):
     return api
 
 def get_app():
-    image_store = ImageStore('.')
+    # Adding the ability to configure the image storage directory with an environment variable.
+    # Set LOOK_STORAGE_PATH=/tmp in the terminal/node.
+    storage_path = os.environ.get('LOOK_STORAGE_PATH', '.')
+    image_store = ImageStore(storage_path)
     return create_app(image_store)
 
 # Bulk of the setup logic has been moved to `create_app()`, which can be used to obtain an API object either for 
