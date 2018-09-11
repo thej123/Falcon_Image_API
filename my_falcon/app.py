@@ -1,6 +1,7 @@
 import os
 import falcon
-from .images import Resource, ImageStore
+from my_falcon import images
+
 """
 api = application = falcon.API()
 """
@@ -30,16 +31,19 @@ images = Resource(image_store)
 api.add_route('/images', images)
 """
 def create_app(image_store):
-    image_resource = Resource(image_store)
     api = falcon.API()
-    api.add_route('/images', image_resource)
+    api.add_route('/images', images.Collection(image_store))
+    api.add_route('/images/{name}', images.Item(image_store))
+    # `/images/{name}` will cause Falcon to expect all associated responders to accept a `name` argument.
+    # Falcon also supports more complex parameterized path segments that contain multiple values. 
+    # For example: `/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}`
     return api
 
 def get_app():
     # Adding the ability to configure the image storage directory with an environment variable.
     # Set LOOK_STORAGE_PATH=/tmp in the terminal/node.
     storage_path = os.environ.get('LOOK_STORAGE_PATH', '.')
-    image_store = ImageStore(storage_path)
+    image_store = images.ImageStore(storage_path)
     return create_app(image_store)
 
 # Bulk of the setup logic has been moved to `create_app()`, which can be used to obtain an API object either for 
