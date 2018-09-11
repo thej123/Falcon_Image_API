@@ -9,6 +9,34 @@ import mimetypes
 import falcon
 import msgpack
 
+# List of media types the service will accept.
+ALLOWED_IMAGE_TYPES = (
+    'image/gif',
+    'image/jpeg',
+    'image/png',
+)
+
+# Checks incoming media type to make sure it is a common image type. 
+# For this we will implement a `before` hook.
+
+# Hooks must accept four arguments. The first 2 arguments, a reference to the same `req` and `resp` 
+# objects that are passed into responders. The `resource` argument is a Resource instance 
+# associated with the request. The fourth argument, named `params` by convention, is a reference to 
+# the kwarg dictionary Falcon created with each request. `params` will contain the route's URI 
+# template params and their values.
+def validate_image_types(req, resp, resource, params):
+    if req.content_type not in ALLOWED_IMAGE_TYPES:
+        msg = 'Image Type not allowed. Must be PNG, JPEG, or GIF'
+        raise falcon.HTTPBadRequest('Bad request', msg)
+
+# you can also use `resp` to play with the HTTP response as needed, and you can even use hooks to 
+# inject extra kwargs.
+def extract_project_id(req, resp, resource, params):
+    # Adds `project_id` to the list of params for all responders. Meant to be used as a `before` hook.
+    params['project_id'] = req.get_header('X-PROJECT-ID')
+
+# Hooks can be applied to an entire resource by simple decorating the class.
+# @falcon.before(extract_project_id)
 class Collection(object):
 
     """
@@ -50,7 +78,8 @@ class Collection(object):
     # For any HTTP method you want your resource to support, simply add an `on_*()` method to the class.
 
     # on_get(), on_post(), on_head(), etc are called `responders`.
-
+    # Hook will run before each request to post a message.
+    @falcon.before(validate_image_types)
     def on_post(self, req,resp):
         """
         ext = mimetypes.guess_extension(req.content_type)
