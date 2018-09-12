@@ -119,12 +119,32 @@ class Item(object):
         # Any URI parameters that you specify in your routes will be turned into corresponding kwargs and passed into the target responder as such.
         resp.content_type = mimetypes.guess_type(name)[0]
         # Set the Content-Type header based on the filename extension.
-        resp.stream, resp.stream_len = self._image_store.open(name)
-        # Stream out the image directly from an open file handle.
-        # Whenever using `resp.stream` instead of `resp.body` or `resp.data`, you typically also 
-        # specify the expected lenth of the stream so that the web client knows how much data to 
-        # read from the response. We do this using `resp.stream_len`
 
+        try:
+            resp.stream, resp.stream_len = self._image_store.open(name)
+            # Stream out the image directly from an open file handle.
+            # Whenever using `resp.stream` instead of `resp.body` or `resp.data`, you typically also 
+            # specify the expected lenth of the stream so that the web client knows how much data to 
+            # read from the response. We do this using `resp.stream_len`
+        except IOError:
+            # Falcon assumes that resource responders (`on_get()`, `on_post()`, etc.) will do the right 
+            # thing. Falcon doesn't try to protect responder code from itself. This approach reduces the 
+            # number of extraneous checks that Falcon would otherwise have to perform, making the 
+            # framework more efficient. Falcon generally requires that:
+            # 1. Resource responders set response variables to sane values.
+            # 2. Untrusted input (i.e., input from an external client or service) is validated.
+            # 3. Your code is well-tested, with high code coverage
+            # 4. Errors are anticipated, detected, logged and handled appropriately within each responder 
+            # or by global error handling hooks.
+
+            # When it comes to error handling, you can always directly set the error status, appropriate 
+            # response headers and error body using the `resp` object. Falcon provides a set of error 
+            # classes you can raise when something goes wrong. Falcon will convert an instance or subclass 
+            # of `falcon.HTTPError` raised by a responder, hook or middleware component into an 
+            # appropriate HTTP response.
+
+            # Normally you would also log the error.
+            raise falcon.HTTPNotFound()
 
 # Earlier our POST test relied heavily on mocking, relying on assumptions that may or may not hold 
 # true as the code evolves. To mitigate this problem, we will refractor the tests and the application.
